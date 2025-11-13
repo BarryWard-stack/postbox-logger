@@ -1,0 +1,15 @@
+# Python general
+__pycache__/
+*.pyc
+.env
+
+# VS Code
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Project-specific folders
+data/
+output/
