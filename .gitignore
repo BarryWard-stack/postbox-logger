@@ -13,3 +13,5 @@ Thumbs.db
 # Project-specific folders
 data/
 output/
+RESET_ENV.bat
+docs/heritage-postbox-v0.8.0-firebase.html
