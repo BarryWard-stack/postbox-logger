@@ -44,5 +44,5 @@ echo ========================================
 echo.
 echo Run 'git status' to verify all files are committed
 echo.
-
-pause
+echo Terminal will close automatically in 3 seconds...
+timeout /t 3 >nul

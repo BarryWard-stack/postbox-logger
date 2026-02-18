@@ -50,5 +50,5 @@ echo Next steps:
 echo 1. Review commit: git log -1
 echo 2. Push to remote: git push origin main
 echo.
-
-pause
+echo Terminal will close automatically in 3 seconds...
+timeout /t 3 >nul

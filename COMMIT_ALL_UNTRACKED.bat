@@ -31,5 +31,5 @@ echo.
 echo Verify with: git status
 echo Push with: git push origin main
 echo.
-
-pause
+echo Terminal will close automatically in 3 seconds...
+timeout /t 3 >nul
