@@ -4,14 +4,7 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "docs/**",
-      "docs_backup_20262/**",
-      "tools/**",
-      "*.md",
-      "*.bat",
-      "*.ps1",
-      "*.template"
+      "**/node_modules/**"
     ],
     "rewrites": [
       {
