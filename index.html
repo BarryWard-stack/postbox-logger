@@ -114,6 +114,8 @@
         signInAnonymously(auth).catch(error => console.error("Auth error:", error));
 
         // All dependencies loaded synchronously in <head>, start app immediately
+        initApp();
+        
         function initApp() {
 // © 2025 Insight Geospatial, Eurotech Marine Data Services Ltd. All rights reserved.
 // Author: Barry Ward
