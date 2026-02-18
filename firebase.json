@@ -3,12 +3,20 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      ".firebaserc",
+      "firebase-debug.log",
       "**/.*",
+      "**/.git/**",
+      "**/.cursor/**",
       "**/node_modules/**",
       "**/*.bat",
       "**/*.ps1",
       "**/*.exe",
+      "**/*.md",
+      "**/*.txt",
+      "**/*.log",
       "docs/**",
+      "docs_backup_20262/**",
       "tools/**"
     ],
     "rewrites": [
