@@ -28,7 +28,11 @@ firebase --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo Firebase CLI not found. Installing now...
     echo This will take 1-2 minutes...
+    echo (npm warnings are normal, ignore them)
     npm install -g firebase-tools
+    echo.
+    echo Verifying Firebase CLI installation...
+    firebase --version >nul 2>&1
     if %errorlevel% neq 0 (
         echo ERROR: Firebase CLI installation failed!
         echo.
