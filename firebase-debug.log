@@ -1,0 +1,20 @@
+[debug] [2026-02-18T02:29:37.361Z] ----------------------------------------------------------------------
+[debug] [2026-02-18T02:29:37.365Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Office\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login
+[debug] [2026-02-18T02:29:37.365Z] CLI Version:   15.6.0
+[debug] [2026-02-18T02:29:37.365Z] Platform:      win32
+[debug] [2026-02-18T02:29:37.366Z] Node Version:  v24.13.1
+[debug] [2026-02-18T02:29:37.366Z] Time:          Wed Feb 18 2026 02:29:37 GMT+0000 (Greenwich Mean Time)
+[debug] [2026-02-18T02:29:37.366Z] ----------------------------------------------------------------------
+[debug] 
+[error] 
+[error] Error: Cannot run login in non-interactive mode. See login:ci to generate a token for use in non-interactive environments.
+[debug] [2026-02-18T02:29:42.664Z] ----------------------------------------------------------------------
+[debug] [2026-02-18T02:29:42.667Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Office\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login
+[debug] [2026-02-18T02:29:42.667Z] CLI Version:   15.6.0
+[debug] [2026-02-18T02:29:42.667Z] Platform:      win32
+[debug] [2026-02-18T02:29:42.668Z] Node Version:  v24.13.1
+[debug] [2026-02-18T02:29:42.668Z] Time:          Wed Feb 18 2026 02:29:42 GMT+0000 (Greenwich Mean Time)
+[debug] [2026-02-18T02:29:42.668Z] ----------------------------------------------------------------------
+[debug] 
+[error] 
+[error] Error: Cannot run login in non-interactive mode. See login:ci to generate a token for use in non-interactive environments.
