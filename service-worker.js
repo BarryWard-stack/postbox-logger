@@ -13,8 +13,8 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/assets/icons/icon-192x192.png',
+  '/assets/icons/icon-512x512.png',
   // Add other critical assets as needed
 ];
 
@@ -163,8 +163,8 @@ async function syncPostboxData() {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New achievement unlocked!',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
+    icon: '/assets/icons/icon-192x192.png',
+    badge: '/assets/icons/badge-72x72.png',
     vibrate: [200, 100, 200],
     data: {
       dateOfArrival: Date.now(),
@@ -174,12 +174,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'View',
-        icon: '/icons/checkmark.png'
+        icon: '/assets/icons/checkmark.png'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/icons/cross.png'
+        icon: '/assets/icons/cross.png'
       }
     ]
   };

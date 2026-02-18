@@ -38,6 +38,32 @@
         input, select, textarea {
             font-size: 16px !important;
         }
+        
+        /* Pulsating user location marker */
+        .user-location-marker {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            position: relative;
+        }
+        .user-location-marker::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid #3b82f6;
+            animation: pulsate 2s infinite;
+        }
+        @keyframes pulsate {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -92,8 +118,20 @@
                 const leafletScript = document.createElement('script');
                 leafletScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js';
                 leafletScript.onload = () => {
-                    // All dependencies loaded, start app
-                    initApp();
+                    // Load postbox assets configuration before starting app
+                    const assetsScript = document.createElement('script');
+                    assetsScript.src = 'postboxAssets.js';
+                    assetsScript.onload = () => {
+                        // Load postcard engine
+                        const postcardScript = document.createElement('script');
+                        postcardScript.src = 'postcard-engine.js';
+                        postcardScript.onload = () => {
+                            // All dependencies loaded, start app
+                            initApp();
+                        };
+                        document.head.appendChild(postcardScript);
+                    };
+                    document.head.appendChild(assetsScript);
                 };
                 document.head.appendChild(leafletScript);
             };
@@ -128,6 +166,23 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // --- UTILITY FUNCTIONS (LBSG Aligned) ---
 const getRarityInfo = (type) => {
+  // Check if we have configuration from postboxAssets.js
+  if (typeof getPostboxTypeConfig !== 'undefined') {
+    const config = getPostboxTypeConfig(type);
+    if (config) {
+      return {
+        level: config.rarity,
+        label: config.label,
+        color: config.color,
+        points: config.basePoints * config.multiplier, // Apply multiplier (10x for Airmail Blue, 5x for Bronze Green)
+        asset: config.asset,
+        developmentStatus: config.developmentStatus,
+        description: config.description
+      };
+    }
+  }
+  
+  // Fallback to legacy rarityMap if postboxAssets.js not loaded
   const rarityMap = {
     'Pillar Box: Penfold Hexagonal (1866-1879)': { level: 10, label: 'LBSG MUSEUM PIECE', color: '#a855f7', points: 200 },
     'Pillar Box: First National Standard (1859)': { level: 9, label: 'LBSG HISTORIC', color: '#dc2626', points: 120 },
@@ -140,6 +195,8 @@ const getRarityInfo = (type) => {
     'Modern: Elizabeth II Cipher (EIIR)': { level: 2, label: 'COMMON', color: '#059669', points: 5 },
     'Modern: Charles III Cipher (CIIIR)': { level: 9, label: 'NEW ERA - RARE', color: '#4f46e5', points: 80 },
     'Special: Olympic Gold (2012)': { level: 8, label: 'SPECIAL EDITION', color: '#d97706', points: 50 },
+    'Special: Airmail Blue': { level: 10, label: 'LEGENDARY AIRMAIL', color: '#0ea5e9', points: 1500 }, // 150 * 10x
+    'Special: Bronze Green': { level: 9, label: 'RARE BRONZE GREEN', color: '#166534', points: 500 }, // 100 * 5x
   };
   return rarityMap[type] || { level: 1, label: 'STANDARD', color: '#6b7280', points: 2 };
 };
@@ -168,6 +225,88 @@ const getRegionalBonus = (lat, lng) => {
 };
 
 // --- CHILD COMPONENTS ---
+
+const PostboxIcon = ({ type, size = 60, showLabel = false }) => {
+  const rarityInfo = getRarityInfo(type);
+  const hasAsset = rarityInfo && rarityInfo.asset;
+  const hasDevelopmentStatus = rarityInfo && rarityInfo.developmentStatus;
+  
+  // Container with 10% padding buffer
+  const containerStyle = {
+    width: `${size}px`,
+    height: `${size}px`,
+    padding: `${size * 0.1}px`, // 10% padding buffer
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    boxSizing: 'border-box'
+  };
+  
+  // Image with object-fit: contain
+  const imageStyle = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center'
+  };
+  
+  // Development status overlay - responsive and centered
+  const overlayStyle = {
+    position: 'absolute',
+    bottom: '8%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0, 0, 0, 0.75)',
+    color: 'white',
+    padding: '0.15em 0.6em',
+    borderRadius: '3px',
+    fontSize: `${size * 0.15}px`,
+    fontWeight: 'bold',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    textAlign: 'center'
+  };
+  
+  return React.createElement('div', { style: containerStyle },
+    hasAsset 
+      ? React.createElement('img', { 
+          src: rarityInfo.asset, 
+          alt: type,
+          style: imageStyle,
+          onError: (e) => {
+            // Fallback to colored circle if image fails to load
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }
+        })
+      : null,
+    // Fallback colored circle
+    React.createElement('div', {
+      style: {
+        display: hasAsset ? 'none' : 'block',
+        width: '80%',
+        height: '80%',
+        borderRadius: '50%',
+        background: rarityInfo ? rarityInfo.color : '#6b7280'
+      }
+    }),
+    // Development status overlay for 3D renders
+    hasDevelopmentStatus && React.createElement('div', { style: overlayStyle }, rarityInfo.developmentStatus),
+    // Optional label
+    showLabel && rarityInfo && React.createElement('div', {
+      style: {
+        position: 'absolute',
+        bottom: '-20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '10px',
+        whiteSpace: 'nowrap',
+        color: '#666'
+      }
+    }, rarityInfo.label)
+  );
+};
 
 const Toast = ({ toast, onClose }) => {
   useEffect(() => {
@@ -285,19 +424,24 @@ const PostboxForm = ({ postbox, onSave, onCancel }) => {
     }
   };
 
-  const postboxTypes = [
-      'Pillar Box: Penfold Hexagonal (1866-1879)', 
-      'Pillar Box: First National Standard (1859)', 
-      'Pillar Box: Victorian Cipher (VR)', 
-      'Pillar Box: Edward VII Cipher (EVIIR)',
-      'Wall Box: First Type (1857)', 
-      'Wall Box: Large Type',
-      'Ludlow Box: Standard',
-      'Lamp Box: Standard Oval',
-      'Modern: Elizabeth II Cipher (EIIR)', 
-      'Modern: Charles III Cipher (CIIIR)',
-      'Special: Olympic Gold (2012)'
-  ];
+  // Use postbox types from postboxAssets.js if available, otherwise use legacy list
+  const postboxTypes = (typeof getAllPostboxTypes !== 'undefined') 
+    ? getAllPostboxTypes()
+    : [
+        'Pillar Box: Penfold Hexagonal (1866-1879)', 
+        'Pillar Box: First National Standard (1859)', 
+        'Pillar Box: Victorian Cipher (VR)', 
+        'Pillar Box: Edward VII Cipher (EVIIR)',
+        'Wall Box: First Type (1857)', 
+        'Wall Box: Large Type',
+        'Ludlow Box: Standard',
+        'Lamp Box: Standard Oval',
+        'Modern: Elizabeth II Cipher (EIIR)', 
+        'Modern: Charles III Cipher (CIIIR)',
+        'Special: Olympic Gold (2012)',
+        'Special: Airmail Blue',
+        'Special: Bronze Green'
+      ];
   const conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Derelict', 'Needs Maintenance'];
 
   return React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '10px' } },
@@ -521,20 +665,56 @@ const PostboxList = ({ postboxes, onSelect, onDelete, onShare, onReport }) => {
     if (postboxes.length === 0) return React.createElement('div', { style: { padding: '20px', textAlign: 'center' } }, 'No postboxes logged yet. Add one!');
     
     return React.createElement('div', { style: { padding: '10px' } },
-        postboxes.map(p => React.createElement('div', { key: p.id, style: { background: 'white', borderLeft: `5px solid ${getRarityInfo(p.type).color}`, marginBottom: '10px', padding: '15px', borderRadius: '5px' } },
-            React.createElement('h3', { style: { marginTop: 0 } }, p.type || 'Postbox'),
-            (p.photos || []).length > 0 && React.createElement('img', { src: p.photos[0].data, style: { maxWidth: '100px', borderRadius: '5px', float: 'right' } }),
-            React.createElement('p', null, `Condition: ${p.condition || 'N/A'}`),
-            React.createElement('p', null, `Postbox Number: ${p.postboxCode || 'N/A'}`),
-            React.createElement('p', null, `Postcode: ${p.postcode || 'N/A'}`),
-            React.createElement('p', { style: { fontSize: '12px', color: '#666' } }, `Added: ${new Date(p.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}`),
-            React.createElement('div', { style: { marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' } },
-                React.createElement('button', { onClick: () => onDelete(p.id), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', cursor: 'pointer', background: 'white' } }, 'Delete'),
-                React.createElement('a', { href: onShare(p), target: '_blank', rel: 'noopener noreferrer', style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Share'),
-                (p.condition === 'Poor' || p.condition === 'Derelict' || p.condition === 'Needs Maintenance') && 
-                    React.createElement('a', { href: onReport(p), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Report')
-            )
-        ))
+        postboxes.map(p => {
+            const rarityInfo = getRarityInfo(p.type);
+            return React.createElement('div', { key: p.id, style: { background: 'white', borderLeft: `5px solid ${rarityInfo.color}`, marginBottom: '10px', padding: '15px', borderRadius: '5px', display: 'flex', gap: '15px' } },
+                // Icon column
+                React.createElement('div', { style: { flexShrink: 0 } },
+                    React.createElement(PostboxIcon, { type: p.type, size: 80, showLabel: false })
+                ),
+                // Content column
+                React.createElement('div', { style: { flex: 1 } },
+                    React.createElement('h3', { style: { marginTop: 0, marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '8px' } }, 
+                        // Subtle rarity indicator dot
+                        React.createElement('span', { 
+                            style: { 
+                                display: 'inline-block', 
+                                width: '8px', 
+                                height: '8px', 
+                                borderRadius: '50%', 
+                                background: rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color),
+                                flexShrink: 0
+                            } 
+                        }),
+                        p.type || 'Postbox'
+                    ),
+                    React.createElement('div', { 
+                        style: { 
+                            display: 'inline-block', 
+                            border: `2px solid ${rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color)}`, 
+                            color: rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color),
+                            background: 'transparent',
+                            padding: '2px 8px', 
+                            borderRadius: '12px', 
+                            fontSize: '10px', 
+                            fontWeight: 'bold', 
+                            marginBottom: '10px' 
+                        } 
+                    }, rarityInfo.label),
+                    (p.photos || []).length > 0 && React.createElement('img', { src: p.photos[0].data, style: { maxWidth: '100px', borderRadius: '5px', float: 'right', marginLeft: '10px' } }),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Condition: ${p.condition || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Postbox Number: ${p.postboxCode || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Postcode: ${p.postcode || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '12px', color: '#666' } }, `Points: ${rarityInfo.points || 0} | Added: ${new Date(p.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}`),
+                    React.createElement('div', { style: { marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' } },
+                        React.createElement('button', { onClick: () => onDelete(p.id), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', cursor: 'pointer', background: 'white' } }, 'Delete'),
+                        React.createElement('a', { href: onShare(p), target: '_blank', rel: 'noopener noreferrer', style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Share'),
+                        (p.condition === 'Poor' || p.condition === 'Derelict' || p.condition === 'Needs Maintenance') && 
+                            React.createElement('a', { href: onReport(p), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Report')
+                    )
+                )
+            );
+        })
     );
 };
 

@@ -29,6 +29,23 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // --- UTILITY FUNCTIONS (LBSG Aligned) ---
 const getRarityInfo = (type) => {
+  // Check if we have configuration from postboxAssets.js
+  if (typeof getPostboxTypeConfig !== 'undefined') {
+    const config = getPostboxTypeConfig(type);
+    if (config) {
+      return {
+        level: config.rarity,
+        label: config.label,
+        color: config.color,
+        points: config.basePoints * config.multiplier, // Apply multiplier (10x for Airmail Blue, 5x for Bronze Green)
+        asset: config.asset,
+        developmentStatus: config.developmentStatus,
+        description: config.description
+      };
+    }
+  }
+  
+  // Fallback to legacy rarityMap if postboxAssets.js not loaded
   const rarityMap = {
     'Pillar Box: Penfold Hexagonal (1866-1879)': { level: 10, label: 'LBSG MUSEUM PIECE', color: '#a855f7', points: 200 },
     'Pillar Box: First National Standard (1859)': { level: 9, label: 'LBSG HISTORIC', color: '#dc2626', points: 120 },
@@ -41,6 +58,8 @@ const getRarityInfo = (type) => {
     'Modern: Elizabeth II Cipher (EIIR)': { level: 2, label: 'COMMON', color: '#059669', points: 5 },
     'Modern: Charles III Cipher (CIIIR)': { level: 9, label: 'NEW ERA - RARE', color: '#4f46e5', points: 80 },
     'Special: Olympic Gold (2012)': { level: 8, label: 'SPECIAL EDITION', color: '#d97706', points: 50 },
+    'Special: Airmail Blue': { level: 10, label: 'LEGENDARY AIRMAIL', color: '#0ea5e9', points: 1500 }, // 150 * 10x
+    'Special: Bronze Green': { level: 9, label: 'RARE BRONZE GREEN', color: '#166534', points: 500 }, // 100 * 5x
   };
   return rarityMap[type] || { level: 1, label: 'STANDARD', color: '#6b7280', points: 2 };
 };
@@ -69,6 +88,88 @@ const getRegionalBonus = (lat, lng) => {
 };
 
 // --- CHILD COMPONENTS ---
+
+const PostboxIcon = ({ type, size = 60, showLabel = false }) => {
+  const rarityInfo = getRarityInfo(type);
+  const hasAsset = rarityInfo && rarityInfo.asset;
+  const hasDevelopmentStatus = rarityInfo && rarityInfo.developmentStatus;
+  
+  // Container with 10% padding buffer
+  const containerStyle = {
+    width: `${size}px`,
+    height: `${size}px`,
+    padding: `${size * 0.1}px`, // 10% padding buffer
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    boxSizing: 'border-box'
+  };
+  
+  // Image with object-fit: contain
+  const imageStyle = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center'
+  };
+  
+  // Development status overlay - responsive and centered
+  const overlayStyle = {
+    position: 'absolute',
+    bottom: '8%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0, 0, 0, 0.75)',
+    color: 'white',
+    padding: '0.15em 0.6em',
+    borderRadius: '3px',
+    fontSize: `${size * 0.15}px`,
+    fontWeight: 'bold',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    textAlign: 'center'
+  };
+  
+  return React.createElement('div', { style: containerStyle },
+    hasAsset 
+      ? React.createElement('img', { 
+          src: rarityInfo.asset, 
+          alt: type,
+          style: imageStyle,
+          onError: (e) => {
+            // Fallback to colored circle if image fails to load
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }
+        })
+      : null,
+    // Fallback colored circle
+    React.createElement('div', {
+      style: {
+        display: hasAsset ? 'none' : 'block',
+        width: '80%',
+        height: '80%',
+        borderRadius: '50%',
+        background: rarityInfo ? rarityInfo.color : '#6b7280'
+      }
+    }),
+    // Development status overlay for 3D renders
+    hasDevelopmentStatus && React.createElement('div', { style: overlayStyle }, rarityInfo.developmentStatus),
+    // Optional label
+    showLabel && rarityInfo && React.createElement('div', {
+      style: {
+        position: 'absolute',
+        bottom: '-20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '10px',
+        whiteSpace: 'nowrap',
+        color: '#666'
+      }
+    }, rarityInfo.label)
+  );
+};
 
 const Toast = ({ toast, onClose }) => {
   useEffect(() => {
@@ -106,7 +207,12 @@ const MapView = ({ userPostboxes, officialPostboxes, userLocation, onMapClick, o
       const map = window.L.map(mapRef.current).setView([userLocation.lat, userLocation.lng], 16);
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
       
-      const userIcon = window.L.divIcon({ html: '<div style="background:#4285f4;width:12px;height:12px;border-radius:50%;border:2px solid white;"></div>' });
+      const userIcon = window.L.divIcon({ 
+        html: '<div class="user-location-marker"></div>',
+        className: '',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
       window.L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map).bindPopup('Your Location');
       
       map.on('click', (e) => onMapClick(e.latlng));
@@ -135,7 +241,16 @@ const MapView = ({ userPostboxes, officialPostboxes, userLocation, onMapClick, o
         // Draw Official Markers
         if (Array.isArray(officialPostboxes)) {
             officialPostboxes.forEach(p => {
-                const marker = window.L.marker([p.lat, p.lon], { icon: greyIcon }).addTo(mapInstanceRef.current).bindPopup(`Existing Postbox<br><small>${p.tags.ref || ''}</small>`);
+                const popupContent = `
+                    <div>
+                        <b>Existing Postbox</b><br>
+                        <small>${p.tags.ref || ''}</small><br>
+                        <button onclick="window.open('geo:${p.lat},${p.lon}', '_blank')" style="margin-top:5px;padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">
+                            🧭 Directions
+                        </button>
+                    </div>
+                `;
+                const marker = window.L.marker([p.lat, p.lon], { icon: greyIcon }).addTo(mapInstanceRef.current).bindPopup(popupContent);
                 officialMarkersRef.current.push(marker);
             });
         }
@@ -147,9 +262,17 @@ const MapView = ({ userPostboxes, officialPostboxes, userLocation, onMapClick, o
             if (rarity.level >= 10) icon = userIconLegendary;
             else if (rarity.level >= 8) icon = userIconRare;
 
+            const userPopupContent = `
+                <div>
+                    <b>My Find:</b> ${p.type || 'Postbox'}<br>
+                    <button onclick="window.open('geo:${p.lat},${p.lng}', '_blank')" style="margin-top:5px;padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer;">
+                        🧭 Directions
+                    </button>
+                </div>
+            `;
             const marker = window.L.marker([p.lat, p.lng], { icon: icon })
                 .addTo(mapInstanceRef.current)
-                .bindPopup(`<b>My Find:</b> ${p.type || 'Postbox'}`);
+                .bindPopup(userPopupContent);
             
             userMarkersRef.current.push(marker); // Track the new user marker
         });
@@ -162,6 +285,8 @@ const MapView = ({ userPostboxes, officialPostboxes, userLocation, onMapClick, o
 
 const PostboxForm = ({ postbox, onSave, onCancel }) => {
   const [formData, setFormData] = useState({ photos: [], postboxCode: '', postcode: '', ...postbox });
+  const [showVisualPicker, setShowVisualPicker] = useState(false);
+  const [expandedInfo, setExpandedInfo] = useState(null);
   const fileInputRef = useRef(null);
 
   const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
@@ -182,14 +307,19 @@ const PostboxForm = ({ postbox, onSave, onCancel }) => {
       setFormData(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
   };
 
-  const postboxTypes = [
-      'Pillar Box: Penfold Hexagonal (1866-1879)', 'Pillar Box: First National Standard (1859)', 'Pillar Box: Victorian Cipher (VR)', 'Pillar Box: Edward VII Cipher (EVIIR)',
-      'Wall Box: First Type (1857)', 'Wall Box: Large Type',
-      'Ludlow Box: Standard',
-      'Lamp Box: Standard Oval',
-      'Modern: Elizabeth II Cipher (EIIR)', 'Modern: Charles III Cipher (CIIIR)',
-      'Special: Olympic Gold (2012)'
-  ];
+  // Use postbox types from postboxAssets.js if available, otherwise use legacy list
+  const postboxTypes = (typeof getAllPostboxTypes !== 'undefined') 
+    ? getAllPostboxTypes()
+    : [
+        'Pillar Box: Penfold Hexagonal (1866-1879)', 'Pillar Box: First National Standard (1859)', 'Pillar Box: Victorian Cipher (VR)', 'Pillar Box: Edward VII Cipher (EVIIR)',
+        'Wall Box: First Type (1857)', 'Wall Box: Large Type',
+        'Ludlow Box: Standard',
+        'Lamp Box: Standard Oval',
+        'Modern: Elizabeth II Cipher (EIIR)', 'Modern: Charles III Cipher (CIIIR)',
+        'Special: Olympic Gold (2012)',
+        'Special: Airmail Blue',
+        'Special: Bronze Green'
+      ];
   const conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Derelict', 'Needs Maintenance'];
 
   return React.createElement('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '10px' } },
@@ -218,10 +348,140 @@ const PostboxForm = ({ postbox, onSave, onCancel }) => {
           )
         ),
         React.createElement('div', null,
-            React.createElement('label', { style: { fontSize: '14px', display: 'block' } }, 'Type'),
-            React.createElement('select', { value: formData.type, onChange: e => updateField('type', e.target.value), style: {width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px'} },
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' } },
+                React.createElement('label', { style: { fontSize: '14px' } }, 'Type'),
+                React.createElement('button', { 
+                    type: 'button',
+                    onClick: () => setShowVisualPicker(!showVisualPicker),
+                    style: { 
+                        padding: '4px 12px', 
+                        background: showVisualPicker ? '#DC2626' : '#6b7280', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                    } 
+                }, showVisualPicker ? '📝 Text Mode' : '🖼️ Visual Mode')
+            ),
+            !showVisualPicker && React.createElement('select', { value: formData.type, onChange: e => updateField('type', e.target.value), style: {width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px'} },
               React.createElement('option', { value: '' }, 'Select type...'),
               postboxTypes.map(type => React.createElement('option', { key: type, value: type }, type))
+            ),
+            showVisualPicker && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', padding: '10px', background: '#f9fafb', borderRadius: '8px' } },
+                postboxTypes.map(type => {
+                    const config = (typeof getPostboxTypeConfig !== 'undefined') ? getPostboxTypeConfig(type) : null;
+                    const isSelected = formData.type === type;
+                    const isExpanded = expandedInfo === type;
+                    
+                    return React.createElement('div', { 
+                        key: type,
+                        style: { 
+                            border: isSelected ? '3px solid #DC2626' : '2px solid #ddd',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#fee2e2' : 'white',
+                            transition: 'all 0.2s',
+                            position: 'relative'
+                        },
+                        onClick: () => updateField('type', type)
+                    },
+                        // Icon container with 10% padding
+                        config && config.asset && React.createElement('div', { 
+                            style: { 
+                                width: '100%',
+                                height: '80px',
+                                padding: '8px', // 10% padding
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '8px'
+                            }
+                        },
+                            React.createElement('img', { 
+                                src: config.asset,
+                                alt: type,
+                                style: { 
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    objectPosition: 'center'
+                                },
+                                onError: (e) => {
+                                    e.target.style.display = 'none';
+                                }
+                            })
+                        ),
+                        // Type name (truncated)
+                        React.createElement('div', { style: { fontSize: '11px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px', lineHeight: '1.2' } },
+                            type.length > 30 ? type.substring(0, 30) + '...' : type
+                        ),
+                        // Rarity badge
+                        config && React.createElement('div', { 
+                            style: { 
+                                fontSize: '9px',
+                                padding: '2px 6px',
+                                background: config.color,
+                                color: 'white',
+                                borderRadius: '4px',
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                                marginBottom: '4px'
+                            }
+                        }, config.label),
+                        // Info button
+                        React.createElement('button', {
+                            type: 'button',
+                            onClick: (e) => {
+                                e.stopPropagation();
+                                setExpandedInfo(isExpanded ? null : type);
+                            },
+                            style: {
+                                position: 'absolute',
+                                top: '5px',
+                                right: '5px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                border: '1px solid #666',
+                                background: isExpanded ? '#DC2626' : 'white',
+                                color: isExpanded ? 'white' : '#666',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 0
+                            }
+                        }, 'i'),
+                        // Expanded info
+                        isExpanded && config && React.createElement('div', {
+                            style: {
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                background: 'white',
+                                border: '2px solid #DC2626',
+                                borderRadius: '8px',
+                                padding: '10px',
+                                marginTop: '5px',
+                                zIndex: 10,
+                                fontSize: '11px',
+                                lineHeight: '1.4',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                            }
+                        },
+                            React.createElement('div', { style: { fontWeight: 'bold', marginBottom: '5px' } }, type),
+                            config.description && React.createElement('div', { style: { marginBottom: '5px' } }, config.description),
+                            config.period && React.createElement('div', { style: { fontSize: '10px', color: '#666' } }, `Period: ${config.period}`),
+                            React.createElement('div', { style: { marginTop: '5px', fontSize: '10px', color: '#DC2626', fontWeight: 'bold' } }, 
+                                `${config.basePoints} points (Rarity ${config.rarity}/10)`
+                            )
+                        )
+                    );
+                })
             )
         ),
         React.createElement('div', null,
@@ -261,6 +521,7 @@ const PostboxLogger = () => {
   const [userPostboxes, setUserPostboxes] = useState([]);
   const [officialPostboxes, setOfficialPostboxes] = useState([]);
   const [selectedPostbox, setSelectedPostbox] = useState(null);
+  const [postcardPostbox, setPostcardPostbox] = useState(null);
   const [viewMode, setViewMode] = useState('map');
   const [userLocation, setUserLocation] = useState(null);
   const [toast, setToast] = useState(null);
@@ -327,41 +588,93 @@ const PostboxLogger = () => {
       }
   };
   
-  const savePostbox = (data) => {
+  const savePostbox = async (data) => {
       const isEditing = !!data.id;
       let updatedPostboxes;
       let finalPostbox = data;
 
-      if (isEditing) {
-          updatedPostboxes = userPostboxes.map(p => p.id === data.id ? data : p);
-          showToast("Postbox Updated!", "Your changes have been saved.");
-      } else {
-          finalPostbox = { ...data, id: Date.now() };
-          updatedPostboxes = [...userPostboxes, finalPostbox];
-          
-          const rarity = getRarityInfo(finalPostbox.type);
-          const regionalBonus = getRegionalBonus(finalPostbox.lat, finalPostbox.lng);
-          const pointsEarned = (rarity.points || 0) + (regionalBonus ? regionalBonus.bonus : 0);
-          const newScore = playerStats.rarityScore + pointsEarned;
-          
-          const newAchievements = checkAchievements(finalPostbox, updatedPostboxes, playerStats);
-          
-          setPlayerStats(prev => ({
-              totalFinds: prev.totalFinds + 1,
-              rarityScore: newScore,
-              level: getPlayerLevel(newScore).level,
-              achievements: [...prev.achievements, ...newAchievements]
-          }));
-          
-          showToast("Postbox Added!", `+${pointsEarned} points! ${regionalBonus ? `(+${regionalBonus.bonus} bonus for ${regionalBonus.region})` : ''}`);
-          newAchievements.forEach((ach, index) => {
-              setTimeout(() => showToast(`🎉 ${ach.title}`, ach.message, 'achievement'), (index + 1) * 1500);
-          });
-          
-          setPostSaveAction(finalPostbox);
+      try {
+          if (isEditing) {
+              updatedPostboxes = userPostboxes.map(p => p.id === data.id ? data : p);
+              
+              // Try to update in Firebase
+              if (typeof window.firebaseDb !== 'undefined' && typeof window.firebaseUpdateDoc !== 'undefined') {
+                  try {
+                      const docRef = window.firebaseDoc(window.firebaseDb, 'postboxes', data.firebaseId || data.id.toString());
+                      await window.firebaseUpdateDoc(docRef, {
+                          ...data,
+                          updatedAt: window.firebaseServerTimestamp()
+                      });
+                      showToast("Postbox Updated!", "Your changes have been saved.");
+                  } catch (firebaseError) {
+                      console.warn('Firebase update failed, saving locally:', firebaseError);
+                      localStorage.setItem('postboxes_local', JSON.stringify(updatedPostboxes));
+                      showToast("Saved Locally", "Will sync when online", 'warning');
+                  }
+              } else {
+                  showToast("Postbox Updated!", "Your changes have been saved.");
+              }
+          } else {
+              finalPostbox = { ...data, id: Date.now() };
+              updatedPostboxes = [...userPostboxes, finalPostbox];
+              
+              const rarity = getRarityInfo(finalPostbox.type);
+              const regionalBonus = getRegionalBonus(finalPostbox.lat, finalPostbox.lng);
+              const pointsEarned = (rarity.points || 0) + (regionalBonus ? regionalBonus.bonus : 0);
+              const newScore = playerStats.rarityScore + pointsEarned;
+              
+              const newAchievements = checkAchievements(finalPostbox, updatedPostboxes, playerStats);
+              
+              setPlayerStats(prev => ({
+                  totalFinds: prev.totalFinds + 1,
+                  rarityScore: newScore,
+                  level: getPlayerLevel(newScore).level,
+                  achievements: [...prev.achievements, ...newAchievements]
+              }));
+              
+              // Try to save to Firebase
+              if (typeof window.firebaseDb !== 'undefined' && typeof window.firebaseAddDoc !== 'undefined') {
+                  try {
+                      const docRef = await window.firebaseAddDoc(
+                          window.firebaseCollection(window.firebaseDb, 'postboxes'),
+                          {
+                              ...finalPostbox,
+                              createdAt: window.firebaseServerTimestamp(),
+                              userId: window.firebaseAuth?.currentUser?.uid || 'anonymous'
+                          }
+                      );
+                      finalPostbox.firebaseId = docRef.id;
+                      showToast("Postbox Added!", `+${pointsEarned} points! ${regionalBonus ? `(+${regionalBonus.bonus} bonus for ${regionalBonus.region})` : ''}`);
+                  } catch (firebaseError) {
+                      console.warn('Firebase save failed, saving locally:', firebaseError);
+                      localStorage.setItem('postboxes_local', JSON.stringify(updatedPostboxes));
+                      showToast("Saved Locally", "Will sync when online", 'warning');
+                  }
+              } else {
+                  showToast("Postbox Added!", `+${pointsEarned} points!`);
+              }
+              
+              newAchievements.forEach((ach, index) => {
+                  setTimeout(() => showToast(`🎉 ${ach.title}`, ach.message, 'achievement'), (index + 1) * 1500);
+              });
+              
+              setPostSaveAction(finalPostbox);
+          }
+          setUserPostboxes(updatedPostboxes);
+          setSelectedPostbox(null);
+      } catch (error) {
+          console.error('Save error:', error);
+          // Fallback to localStorage
+          try {
+              localStorage.setItem('postboxes_local', JSON.stringify(updatedPostboxes));
+              setUserPostboxes(updatedPostboxes);
+              setSelectedPostbox(null);
+              showToast("Saved Locally", "Data saved to device. Will sync when online.", 'warning');
+          } catch (storageError) {
+              console.error('localStorage failed:', storageError);
+              showToast("Save Failed", "Unable to save data. Please try again.", 'error');
+          }
       }
-      setUserPostboxes(updatedPostboxes);
-      setSelectedPostbox(null);
   };
   
   const generateFacebookPost = (postbox) => {
@@ -385,7 +698,7 @@ const PostboxLogger = () => {
           case 'stats':
               return React.createElement(PlayerStats, { playerStats, userPostboxes });
           case 'list':
-              return React.createElement(PostboxList, { postboxes: userPostboxes, onSelect: setSelectedPostbox, onDelete: deletePostbox, onShare: generateFacebookPost, onReport: generateMaintenanceEmail });
+              return React.createElement(PostboxList, { postboxes: userPostboxes, onSelect: setSelectedPostbox, onDelete: deletePostbox, onShare: generateFacebookPost, onReport: generateMaintenanceEmail, onCreatePostcard: setPostcardPostbox });
           default: return null;
       }
   };
@@ -408,6 +721,14 @@ const PostboxLogger = () => {
     }),
     postSaveAction && React.createElement(PostSaveModal, {
         postbox: postSaveAction, onShare: generateFacebookPost, onReport: generateMaintenanceEmail, onClose: () => setPostSaveAction(null)
+    }),
+    postcardPostbox && typeof PostcardCanvas !== 'undefined' && React.createElement(PostcardCanvas, {
+        postbox: postcardPostbox,
+        onClose: () => setPostcardPostbox(null),
+        onExport: (filename) => {
+            setToast({ type: 'success', message: `Postcard saved as ${filename}` });
+            setPostcardPostbox(null);
+        }
     })
   );
 };
@@ -430,23 +751,73 @@ postbox.condition === 'Derelict' || postbox.condition === 'Needs Maintenance';
     );
 };
 
-const PostboxList = ({ postboxes, onSelect, onDelete, onShare, onReport }) => {
+const PostboxList = ({ postboxes, onSelect, onDelete, onShare, onReport, onCreatePostcard }) => {
     if (postboxes.length === 0) return React.createElement('div', { style: { padding: '20px', textAlign: 'center' } }, 'No postboxes logged yet. Add one!');
-return React.createElement('div', { style: { padding: '10px' } },
-        postboxes.map(p => React.createElement('div', { key: p.id, style: { background: 'white', borderLeft: `5px solid ${getRarityInfo(p.type).color}`, marginBottom: '10px', padding: '15px', borderRadius: '5px' } },
-            React.createElement('h3', { style: { marginTop: 0 } }, p.type || 'Postbox'),
-            (p.photos || []).length > 0 && React.createElement('img', { src: p.photos[0].data, style: { maxWidth: '100px', borderRadius: '5px', float: 'right' } }),
-            React.createElement('p', null, `Condition: ${p.condition || 'N/A'}`),
-            React.createElement('p', null, `Postbox Number: ${p.postboxCode || 'N/A'}`),
-            React.createElement('div', { style: { marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' } },
-                React.createElement('button', { onClick: () => onSelect(p) }, 'Edit'),
-                React.createElement('button', { onClick: () => onDelete(p.id) }, 'Delete'),
-                React.createElement('a', { href: onShare(p), target: '_blank', rel: 'noopener noreferrer' }, 'Share'),
-                (p.condition === 'Poor' ||
-p.condition === 'Derelict' || p.condition === 'Needs Maintenance') && 
-                    React.createElement('a', { href: onReport(p) }, 'Report')
-            )
-        ))
+    
+    return React.createElement('div', { style: { padding: '10px' } },
+        postboxes.map(p => {
+            const rarityInfo = getRarityInfo(p.type);
+            return React.createElement('div', { key: p.id, style: { background: 'white', borderLeft: `5px solid ${rarityInfo.color}`, marginBottom: '10px', padding: '15px', borderRadius: '5px', display: 'flex', gap: '15px' } },
+                // Icon column
+                React.createElement('div', { style: { flexShrink: 0 } },
+                    React.createElement(PostboxIcon, { type: p.type, size: 80, showLabel: false })
+                ),
+                // Content column
+                React.createElement('div', { style: { flex: 1 } },
+                    React.createElement('h3', { style: { marginTop: 0, marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '8px' } }, 
+                        // Subtle rarity indicator dot
+                        React.createElement('span', { 
+                            style: { 
+                                display: 'inline-block', 
+                                width: '8px', 
+                                height: '8px', 
+                                borderRadius: '50%', 
+                                background: rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color),
+                                flexShrink: 0
+                            } 
+                        }),
+                        p.type || 'Postbox'
+                    ),
+                    React.createElement('div', { 
+                        style: { 
+                            display: 'inline-block', 
+                            border: `2px solid ${rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color)}`, 
+                            color: rarityInfo.label === 'LEGENDARY' ? '#FFD700' : (rarityInfo.label.includes('AIRMAIL') ? '#0ea5e9' : rarityInfo.color),
+                            background: 'transparent',
+                            padding: '2px 8px', 
+                            borderRadius: '12px', 
+                            fontSize: '10px', 
+                            fontWeight: 'bold', 
+                            marginBottom: '10px' 
+                        } 
+                    }, rarityInfo.label),
+                    (p.photos || []).length > 0 && React.createElement('img', { src: p.photos[0].data, style: { maxWidth: '100px', borderRadius: '5px', float: 'right', marginLeft: '10px' } }),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Condition: ${p.condition || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Postbox Number: ${p.postboxCode || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '14px' } }, `Postcode: ${p.postcode || 'N/A'}`),
+                    React.createElement('p', { style: { margin: '5px 0', fontSize: '12px', color: '#666' } }, `Points: ${rarityInfo.points || 0}`),
+                    React.createElement('div', { style: { marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' } },
+                        React.createElement('button', { onClick: () => onSelect(p), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', cursor: 'pointer', background: 'white' } }, 'Edit'),
+                        React.createElement('button', { onClick: () => onDelete(p.id), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', cursor: 'pointer', background: 'white' } }, 'Delete'),
+                        onCreatePostcard && React.createElement('button', { 
+                            onClick: () => onCreatePostcard(p), 
+                            style: { 
+                                padding: '5px 10px', 
+                                borderRadius: '3px', 
+                                border: '2px solid #DC2626', 
+                                cursor: 'pointer', 
+                                background: '#DC2626', 
+                                color: 'white',
+                                fontWeight: 'bold'
+                            } 
+                        }, '📮 Create Postcard'),
+                        React.createElement('a', { href: onShare(p), target: '_blank', rel: 'noopener noreferrer', style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Share'),
+                        (p.condition === 'Poor' || p.condition === 'Derelict' || p.condition === 'Needs Maintenance') && 
+                            React.createElement('a', { href: onReport(p), style: { padding: '5px 10px', borderRadius: '3px', border: '1px solid #ccc', textDecoration: 'none', color: 'black' } }, 'Report')
+                    )
+                )
+            );
+        })
     );
 };
 
