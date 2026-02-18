@@ -26,13 +26,16 @@ const postboxTypes = {
   },
   'Pillar Box: First National Standard (1859)': {
     asset: 'assets/icons/fluted_pillar_box_silhouette_1.png',
-    rarity: 9,
-    label: 'LBSG HISTORIC',
+    rarity: 10,
+    label: 'VR FLUTED PILLAR (1853-1879)',
     color: '#dc2626',
-    basePoints: 300,
+    basePoints: 500,
     multiplier: 1,
     description: 'Design by First National Standard (1859). Notable for the vertical fluting on the column and the cap\'s acorn finial. Highly protected heritage assets. Only ~150 survive.',
-    period: '1859-1879'
+    period: '1859-1879',
+    visualMarkers: 'Cylindrical Doric-style column with ~20+ vertical flutes. Flattened conical cap (no acorn).',
+    cipherDetails: 'Simple VR separated by a crown.',
+    validationQuestion: 'Does the column have many narrow flutes (20+) all around, or just a few flat panels?'
   },
   'Pillar Box: Victorian Cipher (VR)': {
     asset: 'assets/icons/vr_cipher.png',
@@ -56,13 +59,16 @@ const postboxTypes = {
   },
   'Pillar Box: Edward VIII Cipher (EVIIIR)': {
     asset: 'assets/icons/eviiir_cipher_design_1.png',
-    rarity: 10,
-    label: 'HOLY GRAIL - 325 DAYS',
+    rarity: 9,
+    label: 'EDWARD VIII SURVIVOR (1936)',
     color: '#a855f7',
-    basePoints: 500,
+    basePoints: 300,
     multiplier: 1,
     description: 'Rare 1936 edition. Features the stylized EVIIIR monogram without the Rex numbering, distinguished by a more blocky, Art Deco crown style compared to George V.',
-    period: '1936 (325 days)'
+    period: '1936 (325 days)',
+    visualMarkers: 'Cipher is centred below the letter slot. Look for the distinct VIII.',
+    cipherDetails: 'Monogram E VIII R in one line (not stacked). Tudor crown.',
+    validationQuestion: 'Is the Roman numeral VIII positioned between the E and R in a single horizontal line?'
   },
 
   // Wall Boxes
@@ -146,13 +152,15 @@ const postboxTypes = {
   },
   'Special: Airmail Blue': {
     asset: 'assets/icons/airmail_blue_box.png',
-    rarity: 10,
-    label: 'LEGENDARY AIRMAIL',
-    color: '#0ea5e9',
-    basePoints: 150,
+    rarity: 8,
+    label: '1930s AIRMAIL BLUE',
+    color: '#1F4A7B',
+    basePoints: 250,
     multiplier: 10, // 10x multiplier for Airmail Blue
-    description: 'Rare airmail blue postbox',
-    period: '1930s-1960s'
+    description: 'Deep, dark navy/Prussian blue. Explicit Air Mail marking.',
+    period: '1930s-1960s',
+    visualMarkers: 'Deep, dark navy/Prussian blue. Explicit Air Mail marking.',
+    validationQuestion: 'Does it have an explicit "Air Mail" text marking on the box?'
   },
   'Special: Bronze Green': {
     asset: 'assets/icons/bronze_green_box.png',
@@ -166,15 +174,29 @@ const postboxTypes = {
   },
   
   // Regional Variations
+  'Regional: Jersey First Type (1852)': {
+    asset: 'assets/icons/victorian_bronze_green_postbox_1.png',
+    rarity: 10,
+    label: 'JERSEY FIRST TYPE (VAUDIN)',
+    color: '#6F7F5F',
+    basePoints: 1000,
+    multiplier: 1,
+    description: 'Octagonal/Straight-sided body, simple cap. Distinctive sage green color.',
+    period: '1852',
+    visualMarkers: 'Octagonal/Straight-sided body, simple cap. Distinctive sage green color.',
+    validationQuestion: 'Is the box painted a muted, greyish sage green (not standard red)?'
+  },
   'Regional: Guernsey Blue': {
     asset: 'assets/icons/airmail_blue_postbox_1.png',
-    rarity: 9,
-    label: 'GUERNSEY HERITAGE',
-    color: '#0ea5e9',
-    basePoints: 200,
+    rarity: 5,
+    label: 'GUERNSEY CORPORATE BLUE',
+    color: '#0066B3',
+    basePoints: 50,
     multiplier: 1,
-    description: 'Historic Blue livery (pre-1980). Features the Bailiwick of Guernsey crest instead of the Royal Cypher.',
-    period: 'Pre-1980'
+    description: 'Standard pillar painted bright Guernsey Post blue.',
+    period: 'Pre-1980',
+    visualMarkers: 'Standard pillar painted bright Guernsey Post blue.',
+    validationQuestion: 'Is the blue bright and corporate, or deep/dark (like 1930s Airmail)?'
   },
   'Regional: Isle of Man': {
     asset: 'assets/icons/sunday_yellow_postbox_1.png',
