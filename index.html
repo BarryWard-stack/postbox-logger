@@ -10,6 +10,13 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     
+    <!-- Load dependencies synchronously BEFORE app starts -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="postboxAssets.js"></script>
+    <script src="postcard-engine.js"></script>
+    
     <style>
         * { 
             box-sizing: border-box; 
@@ -106,39 +113,7 @@
         // Auto sign in anonymously
         signInAnonymously(auth).catch(error => console.error("Auth error:", error));
 
-        // Load React after Firebase is ready
-        const reactScript = document.createElement('script');
-        reactScript.src = 'https://unpkg.com/react@18/umd/react.development.js';
-        reactScript.crossOrigin = 'anonymous';
-        reactScript.onload = () => {
-            const reactDomScript = document.createElement('script');
-            reactDomScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.development.js';
-            reactDomScript.crossOrigin = 'anonymous';
-            reactDomScript.onload = () => {
-                const leafletScript = document.createElement('script');
-                leafletScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js';
-                leafletScript.onload = () => {
-                    // Load postbox assets configuration before starting app
-                    const assetsScript = document.createElement('script');
-                    assetsScript.src = 'postboxAssets.js';
-                    assetsScript.onload = () => {
-                        // Load postcard engine
-                        const postcardScript = document.createElement('script');
-                        postcardScript.src = 'postcard-engine.js';
-                        postcardScript.onload = () => {
-                            // All dependencies loaded, start app
-                            initApp();
-                        };
-                        document.head.appendChild(postcardScript);
-                    };
-                    document.head.appendChild(assetsScript);
-                };
-                document.head.appendChild(leafletScript);
-            };
-            document.head.appendChild(reactDomScript);
-        };
-        document.head.appendChild(reactScript);
-
+        // All dependencies loaded synchronously in <head>, start app immediately
         function initApp() {
 // © 2025 Insight Geospatial, Eurotech Marine Data Services Ltd. All rights reserved.
 // Author: Barry Ward
@@ -505,6 +480,8 @@ const PostboxForm = ({ postbox, onSave, onCancel }) => {
 
 // --- MAIN APP COMPONENT ---
 
+const APP_VERSION = '0.9.1';
+
 const PostboxLogger = () => {
   const [userPostboxes, setUserPostboxes] = useState([]);
   const [officialPostboxes, setOfficialPostboxes] = useState([]);
@@ -649,7 +626,10 @@ const PostboxLogger = () => {
 
   return React.createElement('div', { style: { height: '100vh', display: 'flex', flexDirection: 'column' } },
     React.createElement('header', { style: { background: '#991b1b', color: 'white', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' } },
-      React.createElement('h1', { style: { margin: 0, fontSize: '18px' } }, 'Heritage Postbox'),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        React.createElement('h1', { style: { margin: 0, fontSize: '18px' } }, 'Heritage Postbox'),
+        React.createElement('span', { style: { fontSize: '10px', opacity: 0.7, background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '3px' } }, `v${APP_VERSION}`)
+      ),
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
         React.createElement('span', { style: { fontSize: '12px', opacity: 0.9 } }, `🌐 ${userPostboxes.length} community finds`),
         React.createElement('button', { onClick: () => setViewMode('map'), style: {background: viewMode === 'map' ? '#ea580c' : '#7f1d1d', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer'} }, 'Map'),
