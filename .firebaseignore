@@ -1,0 +1,40 @@
+# © 2025 Insight Geospatial, Eurotech Marine Data Services Ltd.
+# Firebase ignore file - only deploy core application files
+
+# Git and version control
+.git
+.gitignore
+
+# IDE and workspace
+.cursor
+.vscode
+
+# Python
+.venv
+__pycache__
+
+# Node
+node_modules
+
+# Documentation
+docs
+docs_backup_20262
+*.md
+*.txt
+
+# Scripts and executables
+*.bat
+*.ps1
+*.exe
+
+# Logs and debug
+*.log
+firebase-debug.log
+
+# Config and templates
+*.template
+firebase.json
+.firebaserc
+
+# Tools
+tools

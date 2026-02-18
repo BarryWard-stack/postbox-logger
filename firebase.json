@@ -1,26 +1,7 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": [
-      "firebase.json",
-      ".firebaserc",
-      "firebase-debug.log",
-      ".git",
-      ".gitignore",
-      ".cursor",
-      ".venv",
-      "node_modules",
-      "docs",
-      "docs_backup_20262",
-      "tools",
-      "*.bat",
-      "*.ps1",
-      "*.exe",
-      "*.md",
-      "*.txt",
-      "*.log",
-      "*.template"
-    ],
+    "ignore": [],
     "rewrites": [
       {
         "source": "**",
