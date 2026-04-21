@@ -1,0 +1,90 @@
+DIRECTORY STRUCTURE CAPTURE
+================================================================================
+Root Path: G:\Insight_Workspace\Projects\postbox-logger
+Generated: capture_structure.py
+================================================================================
+
+postbox-logger/
+├── assets/ [0 files, 1 subdirs]
+│   └── icons/ [18 files, 0 subdirs]
+│       ├── british_postbox_icon_1.png (4.9 MB)
+│       ├── british_postbox_master.png (1.2 MB)
+│       ├── icon-120x120.png (11.6 KB)
+│       ├── icon-144x144.png (14.8 KB)
+│       ├── icon-152x152.png (15.7 KB)
+│       ├── icon-16x16.png (1.2 KB)
+│       ├── icon-192x192.png (20.1 KB)
+│       ├── icon-32x32.png (2.2 KB)
+│       ├── icon-384x384.png (45.4 KB)
+│       ├── icon-512x512.png (65.6 KB)
+│       ├── icon-72x72.png (6.8 KB)
+│       ├── icon-96x96.png (9.2 KB)
+│       ├── ludlow_postbox_icon_1.png (5.0 MB)
+│       ├── ludlow_postbox_master.png (1.4 MB)
+│       ├── penfold_postbox_icon_1.png (4.5 MB)
+│       ├── penfold_postbox_master.png (1.2 MB)
+│       ├── wall_postbox_icon_1.png (3.7 MB)
+│       └── wall_postbox_master.png (1.2 MB)
+├── config/ [0 files, 0 subdirs]
+├── data/ [0 files, 0 subdirs]
+├── docs/ [26 files, 0 subdirs]
+│   ├── BATCH_FILES_README.md (5.0 KB)
+│   ├── CURRENT_STATE_SUMMARY.md (8.9 KB)
+│   ├── DIGITAL_PHILATELY_MODULE.md (17.3 KB)
+│   ├── FUTURE_FEATURES_INDEX.md (11.2 KB)
+│   ├── FUTURE_FEATURES_README.md (5.6 KB)
+│   ├── GIT_COMMIT_GUIDE.md (3.4 KB)
+│   ├── heritage-postbox-v0.8.0-firebase.html (30.8 KB)
+│   ├── HERITAGE_POSTBOX_RESEARCH_SUMMARY.md (2.1 KB)
+│   ├── HERITAGE_POSTBOX_ROADMAP.md (18.0 KB)
+│   ├── ICON_GENERATION_BRIEF.md (1.5 KB)
+│   ├── ICON_TRANSPARENCY_VERIFICATION.md (6.9 KB)
+│   ├── ICONS_INSTALLATION_GUIDE.md (3.2 KB)
+│   ├── MASTER_FILE_INDEX.md (7.4 KB)
+│   ├── PHASE_1_IMPLEMENTATION_GUIDE.md (12.1 KB)
+│   ├── PROGRESS_TRACKER.md (4.8 KB)
+│   ├── PROXIMITY_POSTCARD_CONCEPT.md (11.7 KB)
+│   ├── PWA icon processing summary.md (4.3 KB)
+│   ├── PWA_ICON_PROCESSING_SUMMARY.md (4.6 KB)
+│   ├── QUICK_START_ADAPTED.md (11.8 KB)
+│   ├── QUICK_START_GUIDE.md (9.8 KB)
+│   ├── README.md (11.0 KB)
+│   ├── RESEARCH_IMPLEMENTATION_MAPPING.md (15.8 KB)
+│   ├── SESSION_HANDOFF.md (8.9 KB)
+│   ├── SESSION_SUMMARY_2025-02-14.md (10.7 KB)
+│   ├── STAMP_ASSET_GENERATION_BRIEF.md (8.6 KB)
+│   └── V0.9.0_INTEGRATION_CHECKLIST.md (9.5 KB)
+├── files/ [0 files, 0 subdirs]
+├── logs/ [0 files, 0 subdirs]
+├── src/ [0 files, 0 subdirs]
+├── .gitignore (213.0 B)
+├── capture_structure.bat (1.2 KB)
+├── capture_structure.py (6.9 KB)
+├── fix-icon-transparency.bat (6.1 KB)
+├── generate-pwa-icons.js (4.4 KB)
+├── heritage-color-multipliers.js (6.5 KB)
+├── index.html (31.3 KB)
+├── manifest.json (1.7 KB)
+├── plogger.js (29.9 KB)
+├── quick-check-icons.bat (3.8 KB)
+├── RESET_ENV.bat (1.4 KB)
+├── service-worker.js (5.6 KB)
+├── setup_pwa.bat (2.7 KB)
+└── verify-pwa-installation.bat (9.6 KB)
+
+================================================================================
+STATISTICS
+================================================================================
+Total Directories: 8
+Total Files: 58
+Total Size: 23.6 MB
+
+Files by Extension:
+  .md: 25
+  .png: 18
+  .bat: 6
+  .js: 4
+  .html: 2
+  [no extension]: 1
+  .py: 1
+  .json: 1

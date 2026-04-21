@@ -11,6 +11,24 @@
  * including asset paths, rarity multipliers, and display metadata.
  */
 
+const assetAliases = {
+  'assets/icons/penfold_hexagonal.png': 'assets/icons/penfold_postbox_master.png',
+  'assets/icons/wall_box_first_type.png': 'assets/icons/wall_postbox_master.png',
+  'assets/icons/airmail_blue_box.png': 'assets/icons/airmail_blue_postbox_1.png',
+  'assets/icons/bronze_green_box.png': 'assets/icons/victorian_bronze_green_postbox_1.png',
+  'assets/icons/olympic_gold.png': 'assets/icons/olympic_gold_postbox_new_1.png',
+  'assets/icons/vr_cipher.png': 'assets/icons/vr_cipher_victorian_1.png',
+  'assets/icons/evii_cipher.png': 'assets/icons/british_postbox_master.png',
+  'assets/icons/gv_cipher.png': 'assets/icons/george_v_gr_cipher_1.png',
+  'assets/icons/gvi_cipher.png': 'assets/icons/george_vi_cipher_vector_1.png',
+  'assets/icons/eii_cipher.png': 'assets/icons/british_postbox_master.png',
+  'assets/icons/ciii_cipher.png': 'assets/icons/charles_iii_cipher_1.png',
+  'assets/icons/scottish_crown.png': 'assets/icons/scottish_crown_vector_1.png',
+  'assets/icons/anonymous_cipher.png': 'assets/icons/british_postbox_icon_1.png'
+};
+
+const resolveAssetPath = (assetPath) => assetAliases[assetPath] || assetPath;
+
 // --- POSTBOX TYPES CONFIGURATION ---
 const postboxTypes = {
   // Historic Pillar Boxes
@@ -291,7 +309,8 @@ const monarchCiphers = {
  * @returns {object} Configuration object with asset path, rarity, etc.
  */
 const getPostboxTypeConfig = (typeName) => {
-  return postboxTypes[typeName] || null;
+  const config = postboxTypes[typeName];
+  return config ? { ...config, asset: resolveAssetPath(config.asset) } : null;
 };
 
 /**
@@ -300,7 +319,8 @@ const getPostboxTypeConfig = (typeName) => {
  * @returns {object} Configuration object with asset path, period, etc.
  */
 const getMonarchCipherConfig = (cipherCode) => {
-  return monarchCiphers[cipherCode] || null;
+  const config = monarchCiphers[cipherCode];
+  return config ? { ...config, asset: resolveAssetPath(config.asset) } : null;
 };
 
 /**

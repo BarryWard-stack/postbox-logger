@@ -11,6 +11,8 @@
  * with handwritten message styling and authentic postmark cancellations.
  */
 
+(function () {
+
 const { useState, useRef, useEffect } = React;
 
 // --- POSTCARD CANVAS COMPONENT ---
@@ -420,3 +422,4 @@ const PostcardCanvas = ({ postbox, onClose, onExport }) => {
 window.PostcardCanvas = PostcardCanvas;
 
 console.log('✅ Postcard Engine loaded successfully');
+})();
